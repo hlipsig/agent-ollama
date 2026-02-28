@@ -95,6 +95,8 @@ Quick notes on safety, PR flow, and CI
 python3 -m unittest discover -v tests
 ```
 
-If you'd like, I can open a PR from the enhancement branch with all changes, or continue iterating here on `main`.
+AI Notice:
+
+The contents of this Repository were built with AI Coding assistants. 
 
 
