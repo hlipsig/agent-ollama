@@ -1,0 +1,17 @@
+{
+  "ok": true,
+  "results": [
+    {
+      "command": "echo Agent: upgrading A",
+      "returncode": 0,
+      "stdout": "Agent: upgrading A\n",
+      "stderr": ""
+    },
+    {
+      "command": "echo Agent: upgrading B",
+      "returncode": 0,
+      "stdout": "Agent: upgrading B\n",
+      "stderr": ""
+    }
+  ]
+}

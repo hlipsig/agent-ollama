@@ -1,0 +1,8 @@
+{
+  "working_dir": ".",
+  "commands": [
+    "echo 'Upgrading dependency A...'",
+    "echo 'Upgrading dependency B...'",
+    "touch .upgrade_ran"
+  ]
+}
