@@ -1,0 +1,55 @@
+name: Ollama Agent (Self-hosted)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  agent-local:
+    # Requires you to register a self-hosted runner with the label 'ollama'
+    runs-on: [self-hosted, linux, ollama]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Load agent config
+        id: load_config
+        run: |
+          echo "config<<EOF" >> $GITHUB_OUTPUT
+          cat agent-config.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run Ollama agent (local)
+        uses: ai-action/ollama-action@v2
+        id: agent
+        with:
+          model: llama3.2
+          prompt: |
+            You are an automation agent for a repository running on a self-hosted runner.
+            Repository configuration:
+            ${{ env.CONFIG }}
+
+            GitHub event payload:
+            ${{ toJson(github.event) }}
+
+            Output a JSON object with keys: `commands` (array), `ok` (bool), `summary` (string).
+            Only output valid JSON.
+        env:
+          CONFIG: ${{ steps.load_config.outputs.config }}
+
+      - name: Save agent response
+        run: |
+          printf '%s' "${{ steps.agent.outputs.response }}" > agent_response.json
+
+      - name: Execute commands from agent
+        run: |
+          python3 scripts/execute_commands.py agent-config.json agent_response.json
+
+      - name: Upload agent outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-outputs
+          path: |
+            agent_response.json
+            agent_run_results.json
+          if-no-files-found: warn
