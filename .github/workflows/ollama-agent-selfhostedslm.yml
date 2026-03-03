@@ -1,0 +1,66 @@
+name: Ollama Agent (Self-hosted - SLM)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  agent-local-SLM-Smoketest:
+    runs-on: [self-hosted, linux, ollama]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Load agent config
+        id: load_config
+        run: |
+          echo "config<<EOF" >> $GITHUB_OUTPUT
+          cat agent-config.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run Ollama agent (SLM)
+        uses: ai-action/ollama-action@v2
+        id: agent
+        with:
+          model: tinyllama
+          cache: true
+          prompt: |
+            You are an automation agent with the purpose of evaluating another LLM Agent for accuracy.
+            The most recent prompt and response are in this repository. You will find them in agent_response.json
+            After reading the response and prompt, give your confidence that the model answered as the user expected.
+            Repository configuration:
+            ${{ env.CONFIG }} 
+            
+            Output a JSON object with keys: `prompt` (string), `response` (sring), `grade` (string).
+            Only output valid JSON. 
+
+        env:
+          CONFIG: ${{ steps.load_config.outputs.config }}
+
+      - name: Save agent response
+        run: |
+          printf '%s' "${{ steps.agent.outputs.response }}" > response_accuracy.json
+      - name: Upload agent outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-outputs
+          path: |
+            response_accuracy.json
+          if-no-files-found: warn
+            - name: Read file content
+        id: read_file
+        run: |
+          # Use 'EOF' to handle multi-line strings safely
+          {
+            echo 'CONTENT<<EOF'
+            cat response_accuracy.json
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Send artifact content to Slack
+        uses: slackapi/slack-github-action@v2.1.1
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            text: "Job Artifact Summary: ${{ steps.read_file.outputs.CONTENT }}"
