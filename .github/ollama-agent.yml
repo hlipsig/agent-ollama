@@ -1,0 +1,61 @@
+name: Ollama Agent Runner
+
+on:
+  workflow_dispatch:
+  repository_dispatch:
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Load agent config
+        id: load_config
+        run: |
+          echo "config<<EOF" >> $GITHUB_OUTPUT
+          cat agent-config.json >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Run Ollama agent
+        uses: ai-action/ollama-action@v2
+        id: agent
+        with:
+          model: llama3.2
+          cache: true
+          prompt: |
+            You are an automation agent for a repository.
+            Here is the repository configuration:
+            ${{ env.CONFIG }}
+
+            Here is the GitHub event payload:
+            ${{ toJson(github.event) }}
+
+            Based on the configuration and event, output a JSON object with the following keys:
+            - "commands": an array of shell commands to run in the configured working_dir.
+            - "summary": short human readable summary of actions.
+            - "ok": true/false depending on whether you believe the commands should be executed.
+            - "reason": optional explanation.
+
+            Only output valid JSON (no additional commentary).
+        env:
+          CONFIG: ${{ steps.load_config.outputs.config }}
+
+      - name: Save agent response
+        run: |
+          printf '%s' "${{ steps.agent.outputs.response }}" > agent_response.json
+
+      - name: Execute commands from agent
+        run: |
+          python3 scripts/execute_commands.py agent-config.json agent_response.json
+
+      - name: Upload agent outputs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-outputs
+          path: |
+            agent_response.json
+            agent_run_results.json
+          if-no-files-found: warn
