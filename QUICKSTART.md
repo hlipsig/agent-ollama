@@ -97,5 +97,3 @@ Next experimentation ideas (short)
 - Experimental reviewer: add a lightweight "peer-review" step where a secondary agent evaluates suggested commands and provides a score/opinion; use this as advisory guidance before human approval.
 - Policy engine: integrate OPA/Rego to express organizational constraints and run a policy check during `validate`.
 - Monitoring & alerting: capture metrics for agent proposals and execution frequency, and add a repo-level kill-switch.
-
-Questions or want me to open a PR with these docs? Reply with which next step you prefer.

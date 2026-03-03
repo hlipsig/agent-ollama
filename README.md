@@ -95,7 +95,7 @@ Quick notes on safety, PR flow, and CI
 python3 -m unittest discover -v tests
 ```
 
-AI Notice:
+## AI Notice:
 
 The contents of this Repository were built with AI Coding assistants. 
 
